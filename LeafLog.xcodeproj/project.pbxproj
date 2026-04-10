@@ -15,6 +15,7 @@
 		A10000000000000000000015 /* PlantListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000006 /* PlantListView.swift */; };
 		A10000000000000000000016 /* PlantFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000007 /* PlantFormView.swift */; };
 		A10000000000000000000017 /* WateringCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000008 /* WateringCalendarView.swift */; };
+		A10000000000000000000018 /* PlantDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000019 /* PlantDetailView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +28,7 @@
 		A10000000000000000000006 /* PlantListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlantListView.swift; sourceTree = "<group>"; };
 		A10000000000000000000007 /* PlantFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlantFormView.swift; sourceTree = "<group>"; };
 		A10000000000000000000008 /* WateringCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WateringCalendarView.swift; sourceTree = "<group>"; };
+		A10000000000000000000019 /* PlantDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlantDetailView.swift; sourceTree = "<group>"; };
 		A10000000000000000000009 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -93,6 +95,7 @@
 				A10000000000000000000006 /* PlantListView.swift */,
 				A10000000000000000000007 /* PlantFormView.swift */,
 				A10000000000000000000008 /* WateringCalendarView.swift */,
+				A10000000000000000000019 /* PlantDetailView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -181,6 +184,7 @@
 				A10000000000000000000015 /* PlantListView.swift in Sources */,
 				A10000000000000000000016 /* PlantFormView.swift in Sources */,
 				A10000000000000000000017 /* WateringCalendarView.swift in Sources */,
+				A10000000000000000000018 /* PlantDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

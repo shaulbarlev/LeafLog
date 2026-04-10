@@ -1,6 +1,8 @@
 import SwiftUI
+import UIKit
 
 struct PlantFormView: View {
+    @Environment(\.openURL) private var openURL
     enum Mode {
         case create
         case edit(Plant)
@@ -59,29 +61,59 @@ struct PlantFormView: View {
 
     var body: some View {
         Form {
-            Section("Plant Details") {
-                TextField("Name", text: $name)
-                TextField("Species", text: $species)
-                TextField("Room", text: $room)
+            Section {
+                labeledField(
+                    title: "Name",
+                    text: $name,
+                    prompt: "Monstera"
+                )
+                labeledField(
+                    title: "Species",
+                    text: $species,
+                    prompt: "Deliciosa"
+                )
+                labeledField(
+                    title: "Room",
+                    text: $room,
+                    prompt: "Living Room"
+                )
+            } header: {
+                Text("Plant Details")
+            } footer: {
+                Text("Only the plant name is required. Species, room, and notes help you search and recognize plants faster later.")
             }
 
-            Section("Watering Schedule") {
+            Section {
                 DatePicker("Last Watered", selection: $lastWateredAt, displayedComponents: .date)
 
                 Stepper(value: $wateringIntervalDays, in: 1 ... 30) {
                     Label("Every \(wateringIntervalDays) day\(wateringIntervalDays == 1 ? "" : "s")", systemImage: "drop")
                 }
+            } header: {
+                Text("Watering Schedule")
+            } footer: {
+                Text("LeafLog uses the last watered date and interval to calculate the next watering day.")
             }
 
-            Section("Reminder") {
+            Section {
                 Toggle("Send watering reminder", isOn: $reminderEnabled)
                 if reminderEnabled {
                     DatePicker("Reminder time", selection: $reminderTime, displayedComponents: .hourAndMinute)
+                    NotificationStatusCard(
+                        authorizationState: store.notificationState,
+                        reminderEnabled: reminderEnabled,
+                        reminderTimeText: composedPlant.formattedReminderTime,
+                        onOpenSettings: openAppSettings
+                    )
                 }
+            } header: {
+                Text("Reminder")
+            } footer: {
+                Text("Enable a reminder if you want a local notification on the next watering day.")
             }
 
             Section("Notes") {
-                TextField("Notes", text: $notes, axis: .vertical)
+                TextField("", text: $notes, prompt: Text("Add care notes, quirks, or problem spots"), axis: .vertical)
                     .lineLimit(4, reservesSpace: true)
             }
 
@@ -90,10 +122,25 @@ struct PlantFormView: View {
                     Text(composedPlant.nextWateringDate.formatted(date: .abbreviated, time: .omitted))
                         .fontWeight(.semibold)
                 }
+
+                LabeledContent("Status") {
+                    Text(composedPlant.wateringStatusText)
+                        .foregroundStyle(composedPlant.isOverdue ? .red : .secondary)
+                }
             }
         }
         .navigationTitle(mode.title)
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await store.refreshNotificationStatus()
+        }
+        .onChange(of: reminderEnabled) { _, isEnabled in
+            guard isEnabled else { return }
+            Task {
+                await NotificationManager.shared.requestAuthorizationIfNeeded()
+                await store.refreshNotificationStatus()
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") {
@@ -123,7 +170,8 @@ struct PlantFormView: View {
             lastWateredAt: lastWateredAt,
             reminderEnabled: reminderEnabled,
             reminderHour: reminderComponents.hour ?? 9,
-            reminderMinute: reminderComponents.minute ?? 0
+            reminderMinute: reminderComponents.minute ?? 0,
+            wateringEvents: modePlant?.wateringEvents ?? []
         )
     }
 
@@ -143,5 +191,32 @@ struct PlantFormView: View {
         components.hour = hour
         components.minute = minute
         return Calendar.current.date(from: components) ?? .now
+    }
+
+    private var modePlant: Plant? {
+        switch mode {
+        case .create:
+            return nil
+        case let .edit(plant):
+            return plant
+        }
+    }
+
+    private func openAppSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        openURL(url)
+    }
+
+    @ViewBuilder
+    private func labeledField(title: String, text: Binding<String>, prompt: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            TextField("", text: text, prompt: Text(prompt))
+                .textInputAutocapitalization(.words)
+        }
+        .padding(.vertical, 2)
     }
 }

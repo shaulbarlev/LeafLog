@@ -1,9 +1,14 @@
 import SwiftUI
 
 struct WateringCalendarView: View {
+    private struct PlantRoute: Identifiable, Hashable {
+        let id: UUID
+    }
+
     @EnvironmentObject private var store: PlantStore
     @State private var monthAnchor = Calendar.current.startOfDay(for: .now)
     @State private var selectedDate = Calendar.current.startOfDay(for: .now)
+    @State private var selectedPlantRoute: PlantRoute?
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
 
@@ -29,7 +34,9 @@ struct WateringCalendarView: View {
                                 dueCount: store.duePlantCount(on: day)
                             )
                             .onTapGesture {
-                                selectedDate = day
+                                withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                                    selectedDate = day
+                                }
                             }
                         } else {
                             Color.clear
@@ -43,12 +50,20 @@ struct WateringCalendarView: View {
             .padding()
         }
         .navigationTitle("Watering Calendar")
+        .animation(.spring(response: 0.35, dampingFraction: 0.88), value: selectedDate)
+        .animation(.easeInOut(duration: 0.22), value: monthAnchor)
+        .navigationDestination(item: $selectedPlantRoute) { route in
+            PlantDetailView(plantID: route.id)
+                .environmentObject(store)
+        }
     }
 
     private var monthHeader: some View {
         HStack {
             Button {
-                shiftMonth(by: -1)
+                withAnimation(.easeInOut(duration: 0.22)) {
+                    shiftMonth(by: -1)
+                }
             } label: {
                 Image(systemName: "chevron.left")
                     .font(.headline)
@@ -58,11 +73,14 @@ struct WateringCalendarView: View {
 
             Text(monthAnchor.formatted(.dateTime.month(.wide).year()))
                 .font(.title3.weight(.semibold))
+                .contentTransition(.interpolate)
 
             Spacer()
 
             Button {
-                shiftMonth(by: 1)
+                withAnimation(.easeInOut(duration: 0.22)) {
+                    shiftMonth(by: 1)
+                }
             } label: {
                 Image(systemName: "chevron.right")
                     .font(.headline)
@@ -77,6 +95,7 @@ struct WateringCalendarView: View {
         return VStack(alignment: .leading, spacing: 10) {
             Text(selectedDate.formatted(date: .complete, time: .omitted))
                 .font(.headline)
+                .contentTransition(.interpolate)
 
             if plants.isEmpty {
                 ContentUnavailableView(
@@ -87,29 +106,39 @@ struct WateringCalendarView: View {
             } else {
                 ForEach(plants) { plant in
                     HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(plant.name)
-                                .font(.headline)
+                        Button {
+                            selectedPlantRoute = PlantRoute(id: plant.id)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(plant.name)
+                                    .font(.headline)
 
-                            if !plant.room.isEmpty {
-                                Text(plant.room)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                if !plant.room.isEmpty {
+                                    Text(plant.room)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .buttonStyle(.plain)
 
                         Spacer()
 
                         Button("Watered") {
-                            store.markWatered(plant, on: selectedDate)
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.86)) {
+                                store.markWatered(plant, on: selectedDate, source: .manualCalendar)
+                            }
                         }
                         .buttonStyle(.bordered)
                     }
                     .padding()
                     .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
                 }
             }
         }
+        .animation(.spring(response: 0.35, dampingFraction: 0.88), value: plants)
     }
 
     private var weekdaySymbols: [String] {
@@ -168,6 +197,7 @@ private struct CalendarDayCell: View {
         VStack(spacing: 6) {
             Text(date.formatted(.dateTime.day()))
                 .font(.subheadline.weight(.semibold))
+                .contentTransition(.numericText())
 
             if dueCount > 0 {
                 Text("\(dueCount)")
@@ -175,6 +205,7 @@ private struct CalendarDayCell: View {
                     .frame(width: 18, height: 18)
                     .background(Color.green, in: Circle())
                     .foregroundStyle(.white)
+                    .contentTransition(.numericText())
             } else {
                 Circle()
                     .fill(Color.clear)
@@ -190,6 +221,9 @@ private struct CalendarDayCell: View {
                     .stroke(Color.green.opacity(0.65), lineWidth: 1.5)
             }
         }
+        .scaleEffect(isSelected ? 1.03 : 1)
+        .animation(.spring(response: 0.28, dampingFraction: 0.82), value: isSelected)
+        .animation(.easeInOut(duration: 0.18), value: dueCount)
     }
 
     private var backgroundStyle: Color {
